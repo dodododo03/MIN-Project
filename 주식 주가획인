@@ -1,0 +1,58 @@
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+import io
+import base64
+from flask import Flask, render_template, request
+
+# Flask 앱 생성
+app = Flask(__name__)
+
+# 그래프를 그리는 함수
+def generate_stock_charts(ticker_symbol):
+    try:
+        stock = yf.Ticker(ticker_symbol)
+        df = stock.history(period="1y")
+
+        if df.empty:
+            return None, "해당 티커를 찾을 수 없거나 데이터가 없습니다."
+
+        # 그래프를 그리기
+        img_buffer = io.BytesIO()
+        plt.figure(figsize=(10, 5))
+        plt.plot(df.index, df['Close'], label='종가')
+        plt.title(f'{ticker_symbol} 종가 그래프')
+        plt.xlabel('날짜')
+        plt.ylabel('가격(USD)$')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(img_buffer, format='png')
+        plt.close() # 그래프를 닫아 메모리 확보
+
+        # 이미지를 Base64 문자열로 인코딩
+        img_buffer.seek(0)
+        img_str = base64.b64encode(img_buffer.read()).decode('utf-8')
+        
+        return img_str, None
+    except Exception as e:
+        return None, f"오류 발생: {str(e)}"
+
+# 웹사이트의 메인 페이지 (URL: /)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        # 사용자가 입력한 주식 티커 가져오기
+        ticker = request.form['ticker_symbol'].upper()
+        # 그래프 생성 함수 호출
+        img_str, error = generate_stock_charts(ticker)
+        if error:
+            # 오류가 발생하면 오류 메시지를 보여줌
+            return render_template('index.html', error=error)
+        # 성공하면 그래프 이미지와 티커를 HTML에 전달
+        return render_template('index.html', chart_image=img_str, ticker=ticker)
+    # 처음 페이지를 열었을 때
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    # 웹 서버 실행
+    app.run(debug=True)
