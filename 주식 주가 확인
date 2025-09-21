@@ -1,0 +1,40 @@
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+
+Tsla = yf.Ticker("TSLA") # 주식 이름 'TSLA'로 변경
+
+df = Tsla.history(period ="1y") # 1년동 TSLA 주식 데이터를 확인
+
+print(df)
+
+# 장 시작 최대값 최소값 장 마감!
+# 변수명.index 변수명['close']
+plt.figure(figsize=(14, 6))
+plt.plot(df.index ,df['Close'], label='Closing Price')
+plt.title('TSLA Closing Price')
+plt.xlabel('Data')
+plt.ylabel('Price(USD)$')
+plt.legend()
+plt.show()
+
+df['MA20'] = df['Close'].rolling(window=20).mean()
+df['MA60'] = df['Close'].rolling(window=60).mean()
+
+df['Daily Return'] = df['Close'].pct_change()
+plt.figure(figsize=(14, 6))
+df['Daily Return'].plot(kind='hist', bins=50)
+plt.title('TSLA Daily Return Histogram')
+plt.xlabel('Daily Return')
+plt.grid(True)
+plt.show()
+
+df['Daily Return'] = df['Close'].pct_change()
+plt.figure(figsize=(14, 6))
+plt.plot(df['Close'], label='Close')
+plt.plot(df['MA20'], label='MA20')
+plt.plot(df['MA60'], label='MA60')
+plt.title('TSLA Closing Price with Moving Averages')
+plt.legend()
+plt.grid(True)
+plt.show()
